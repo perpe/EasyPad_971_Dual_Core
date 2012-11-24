@@ -48,6 +48,8 @@
 	#include "../../../drivers/video/rockchip/hdmi/rk_hdmi.h"
 #endif
 
+#include "../../../drivers/misc/gps/rk29_gps.h"
+
 #if defined(CONFIG_SPIM_RK29)
 #include "../../../drivers/spi/rk29_spim.h"
 #endif
@@ -81,7 +83,9 @@
 #ifdef CONFIG_VIDEO_RK29
 /*---------------- Camera Sensor Macro Define Begin  ------------------------*/
 /*---------------- Camera Sensor Configuration Macro Begin ------------------------*/
-#define CONFIG_SENSOR_0 RK29_CAM_SENSOR_OV2659						/* back camera sensor */
+
+/*
+#define CONFIG_SENSOR_0 RK29_CAM_SENSOR_OV2659						// back camera sensor 
 #define CONFIG_SENSOR_IIC_ADDR_0		0x60
 #define CONFIG_SENSOR_IIC_ADAPTER_ID_0	  3
 #define CONFIG_SENSOR_CIF_INDEX_0                    0
@@ -94,6 +98,24 @@
 #define CONFIG_SENSOR_RESETACTIVE_LEVEL_0 RK29_CAM_RESETACTIVE_L
 #define CONFIG_SENSOR_POWERDNACTIVE_LEVEL_0 RK29_CAM_POWERDNACTIVE_H
 #define CONFIG_SENSOR_FLASHACTIVE_LEVEL_0 RK29_CAM_FLASHACTIVE_L
+*/
+#define CONFIG_SENSOR_0 RK29_CAM_SENSOR_OV5640						// back camera sensor 
+#define CONFIG_SENSOR_IIC_ADDR_0		0x78
+#define CONFIG_SENSOR_IIC_ADAPTER_ID_0	  3
+#define CONFIG_SENSOR_CIF_INDEX_0                    0
+#define CONFIG_SENSOR_ORIENTATION_0 	  90
+#define CONFIG_SENSOR_POWER_PIN_0		  INVALID_GPIO
+#define CONFIG_SENSOR_RESET_PIN_0		  INVALID_GPIO
+#define CONFIG_SENSOR_POWERDN_PIN_0 	  RK30_PIN1_PD6
+#define CONFIG_SENSOR_FALSH_PIN_0		  INVALID_GPIO
+#define CONFIG_SENSOR_POWERACTIVE_LEVEL_0 RK29_CAM_POWERACTIVE_L
+#define CONFIG_SENSOR_RESETACTIVE_LEVEL_0 RK29_CAM_RESETACTIVE_L
+#define CONFIG_SENSOR_POWERDNACTIVE_LEVEL_0 RK29_CAM_POWERDNACTIVE_H
+#define CONFIG_SENSOR_FLASHACTIVE_LEVEL_0 RK29_CAM_FLASHACTIVE_L
+
+
+
+
 
 #define CONFIG_SENSOR_QCIF_FPS_FIXED_0		15000
 #define CONFIG_SENSOR_240X160_FPS_FIXED_0   15000
@@ -697,6 +719,56 @@ static struct goodix_i2c_rmi_platform_data ts_pdata = {
 #endif
 static struct spi_board_info board_spi_devices[] = {
 };
+
+
+
+
+#if defined(CONFIG_RK29_GPS)
+#define 	RK29_GPS_POWER_PIN 		  RK30_PIN4_PD3
+#define 	RK29_GPS_RESET_PIN	  	RK30_PIN4_PD4
+int rk29_gps_power_up(void)
+{
+	printk("%s \n", __FUNCTION__);
+  gpio_request(RK29_GPS_POWER_PIN, NULL);
+	gpio_direction_output(RK29_GPS_POWER_PIN, GPIO_HIGH);
+	return 0;
+}
+
+int rk29_gps_power_down(void)
+{
+	printk("%s \n", __FUNCTION__);
+  gpio_request(RK29_GPS_POWER_PIN, NULL);
+	gpio_direction_output(RK29_GPS_POWER_PIN, GPIO_LOW);
+	return 0;
+}
+
+int rk29_gps_reset_set(int level)
+{
+	gpio_request(RK29_GPS_RESET_PIN, NULL);
+	if (level)
+	 gpio_direction_output(RK29_GPS_RESET_PIN, GPIO_HIGH);
+	else
+		gpio_direction_output(RK29_GPS_RESET_PIN, GPIO_LOW);
+	return 0;
+}
+
+struct rk29_gps_data rk29_gps_info = {
+	.power_up = rk29_gps_power_up,
+	.power_down = rk29_gps_power_down,
+	.reset = rk29_gps_reset_set,
+	.uart_id = 3,
+};
+
+struct platform_device rk29_device_gps = {
+	.name = "rk29_gps",
+	.id = -1,
+	.dev		= {
+	.platform_data = &rk29_gps_info,
+		}
+	};
+#endif
+
+
 
 /***********************************************************
 *	rk30  backlight
@@ -1646,6 +1718,11 @@ static struct platform_device *devices[] __initdata = {
 #ifdef CONFIG_RFKILL_RK
 	&device_rfkill_rk,
 #endif
+
+#ifdef CONFIG_RK29_GPS
+	&rk29_device_gps,
+#endif
+
 };
 
 // i2c
